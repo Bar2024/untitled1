@@ -7,9 +7,11 @@ public class Main {
     public static Scanner scanner;
     public static Random rnd;
 
+    /** This game is battleshipGame bla bla bla .. (Don't forget to summarize in the future) */
+
     public static void battleshipGame() {
 
-        /* board issues */
+        /** In this part we get the board size from use and saving the information. n = rows , m = cols */
 
         System.out.println("Enter the board size:");
         String[] sizeStr = scanner.nextLine().split("X");
@@ -17,7 +19,7 @@ public class Main {
         int m = Integer.parseInt(sizeStr[1]);
 
 
-        /* making 2 boards and 2 guessing boards */
+        /** making game board and guessing board for both the user and the computer. */
 
         String[][] userGuessBoard = makeBoard(n, m);
         String[][] compGuessBoard = makeBoard(n, m);
@@ -25,41 +27,44 @@ public class Main {
         String[][] compBoard = makeBoard(n, m);
 
 
-        /* making array of battleships*/
+        /** Making array of battleships, according to the user's input.
+         * Each entry of the array contains a string in the following format:
+         * number X size. number represents the amount of the Battleships and the size represents their length. */
 
         System.out.println("Enter the battleships sizes:");
         String[] battleships = scanner.nextLine().split(" ");
 
 
-        //initializing user & computer boards and set the total number of battleship into "totalBattleships" variable.
+        /** Placing the starting battleships in both the user and the computer board.
+         *  Additionally, initialize a variable to be the total amount of battleships played in the current game. */
+
         int totalBattleships = initializeUserBoard(userBoard, battleships, n, m);
         initializeComputerBoard(compBoard, battleships, n, m);
 
 
-        /*
-         Creating new array of total battleships that still in the game
-         battleshipState[0] for the user
-         battleshipState[1] for the computer
-         */
+        /** Creates an array that contains the information about the number of submarines
+         that are still in the game at any given moment.
+         battleshipState[0] for the user, battleshipState[1] for the computer. */
 
         int[] battleshipState = {totalBattleships, totalBattleships};
 
 
-        /* Attack Mode*/
-
+        /** The user and the computer start attacking each other, until one of them loses. The user starts first. */
         while(true) {
 
-            //User attack the computer now.
+            /** The user is attacking the computer now. */
             userAttackComputer(userGuessBoard, compBoard, compGuessBoard, battleshipState, n, m);
 
+            /** This block checks if the computer has lost all its battleships */
             if(battleshipState[1] == 0){
                 System.out.println("You won the game!");
                 break;
             }
 
-            //Computer attack the user now.
+            /** The computer is attacking the user now. */
             computerAttackUser(compGuessBoard, userBoard, userGuessBoard, battleshipState, n, m);
 
+            /** This block checks if the user has lost all its battleships */
             if(battleshipState[0] == 0){
                 System.out.println("You lost ):");
                 break;
@@ -69,23 +74,26 @@ public class Main {
     }
 
 
-    // initialize user's board and on the way returning the total amount of battleship in the current game.
+    /** The function places the battleships on the user's game board according to the user's input which the
+     *  information is stored in the given string named battleships.
+     *  returning the total amount of battleship in the current game. */
+
     public static int initializeUserBoard (String[][] userBoard, String[] battleships, int n, int m){
-        // check location, orientation and size of battleship
-        // this for loop is easier than using a loop with index
+
 
         int totalBattleships = 0;
 
+        /** This loop is running over each entry of the string of battleship. */
         for (String s : battleships) {
             String[] currentBattleship = s.split("X");
             // get the number and sizes of the current battleships
             int numCurrentBattleship = Integer.parseInt(currentBattleship[0]);
             int currentSizeBattleship = Integer.parseInt(currentBattleship[1]);
 
-            //total battleships in the game
+            /** calculating the total amount of battleships in the game. */
             totalBattleships += numCurrentBattleship;
 
-            // make another loop for the number of the current size
+            /** .*/
             for (int i = 0; i < numCurrentBattleship; i++) {
                 int orientation;
                 boolean tile;
@@ -143,18 +151,36 @@ public class Main {
     }
 
 
+    /** The computer is attacking the user's battleships.
+     * This function is activated when the computer's turn has come, and in addition the game has not yet ended,
+     *  and operates according to the game's instructions */
     public static void computerAttackUser(String[][] userBoard, String[][] userGuessBoard, String[][] compGuessBoard,
                                           int[] battleshipState, int n, int m) {
 
-        boolean flag = true;
+        boolean validScan = false;
+
+
+
         do {
+
+            /** draw coordinates to attack.*/
             int rowBattleship = rnd.nextInt(n);
             int colBattleship = rnd.nextInt(m);
+
+
+            /** checks if those coordinates are already been drawn.*/
             if (!isAlreadyBeenAttacked(compGuessBoard, rowBattleship, colBattleship)) {
-                flag = false;
+                validScan = true;
             }
 
-            if (!flag) {
+            /** If we enter this block, We know that the coordinates are valid.
+             * prints a message to the user to tell him that the computer attacked those coordinates.
+             * If the computer missed, printing a message and updating the computer guess board
+             * If the computer hit a user's battleship, printing a message and updating both the game and guessing boards
+             * If a battleship had drown, telling the user that and the amount of left battleships he holds
+             * Updating the array that holds the information about the amount of battleships left in the game.*/
+
+            if (validScan) {
                 System.out.println("The computer attacked (" + rowBattleship + ", " + colBattleship + ")");
 
                 if (isAttackMissed(userBoard, rowBattleship, colBattleship)) {
@@ -172,31 +198,59 @@ public class Main {
 
             }
 
-        } while (flag);
+        } while (!validScan);
 
     }
 
 
 
+    /** The user is attacking the computer's battleships.
+     * This function is activated when the user's turn has come, and in addition the game has not yet ended,
+     *  and operates according to the game's instructions */
 
     public static void userAttackComputer(String[][] userGuessBoard, String[][] compBoard, String[][] compGuessBoard,
                                           int[] battleshipState, int n, int m) {
+
+        /** prints a message for the user.
+         * Asking for coordinates that the user want to attack .*/
+
         System.out.println("Your current guessing board:");
         printGameBoard(userGuessBoard, n, m);
         System.out.println("Enter a tile to attack");
-        int badScan = 1;
-        while (badScan == 1) {
+        boolean validScan = false;
+
+        while (!validScan) {
+
             String[] userAttackCord = scanner.nextLine().split(", ");
             int rowAttack = Integer.parseInt(userAttackCord[0]);
             int colAttack = Integer.parseInt(userAttackCord[1]);
+
+            /** In case the coordinates deviate from the board, printing error message. */
             if (!checkStartingTile(n, m, rowAttack, colAttack)) {
                 System.out.println("Illegal tile, try again!");
+
+
+            /** In case the coordinates have already been attacked, printing error message. */
             } else if (isAlreadyBeenAttacked(userGuessBoard, rowAttack, colAttack)) {
                 System.out.println("Tile already attacked, try again!");
-            } else {
+            }
+
+            /** Now we know that the user had entered valid coordinates. */
+            else {
+                validScan= true;
+
+                /** If the user's attack missed a battleship, printing a message, and updating the guess board.*/
                 if (isAttackMissed(compBoard, rowAttack, colAttack)) {
                     System.out.println("That is a miss!");
                     updateBoard(userGuessBoard, rowAttack, colAttack, "X");
+
+                /** Now we know that user hit a computer's battleship
+                 * printing a message
+                 * updating the computer's game board that his battleship had injured.
+                 * updating the user's guess board according to the coordinates.
+                 * Checks whether the user has sunk the ship of the computer.
+                 * updates the total amount of computer's battleships that are still in the game.*/
+
                 } else {
                     System.out.println("That is a hit!");
                     updateBoard(userGuessBoard, rowAttack, colAttack, "V");
@@ -206,15 +260,17 @@ public class Main {
                                 + " more battleships to go!");
                     }
                 }
-                badScan = 0;
+
             }
         }
     }
 
-    // initialize the computer battleships and place them on the board
+    /** This function places the computer battleships on the board, according to random draw and the rules of the game */
     public static void initializeComputerBoard(String[][] compBoard,String[] battleships,int n, int m) {
+
         for (String s : battleships) {
             String[] currentBattleship = s.split("X");
+
             // get the number and sizes of the current battleships
             int numCurrentBattleship = Integer.parseInt(currentBattleship[0]);
             int currentSizeBattleship = Integer.parseInt(currentBattleship[1]);
@@ -234,15 +290,14 @@ public class Main {
                     boundaries = checkBoardBoundaries(n, m, currentSizeBattleship, rowBattleship, colBattleship, orientation);
                     overlap = checkOverlap(compBoard, currentSizeBattleship, rowBattleship, colBattleship, orientation);
                     adjacent = checkAdjacent(compBoard, rowBattleship, colBattleship);
-                    tile = checkStartingTile(n, m, rowBattleship, colBattleship);
-                    if (!tile)
-                        continue;
+
                     if (!boundaries)
                         continue;
                     if (!overlap)
                         continue;
                     if (!adjacent)
                         continue;
+
                     putInBoard(compBoard, rowBattleship, colBattleship, orientation, currentSizeBattleship);
                 } while (!boundaries || !overlap || !adjacent);
             }
@@ -250,17 +305,17 @@ public class Main {
     }
 
 
-    // print the board
-    public static void printGameBoard(String[][]board, int row, int col){
-        for(int i=0; i<row; i++){
-            for(int j=0; j<col; j++){
+    /** Printing a board. */
+    public static void printGameBoard(String[][]board, int rows, int cols){
+        for(int i=0; i<rows; i++){
+            for(int j=0; j<cols; j++){
                 System.out.print(board[i][j]);
             }
             System.out.println();
         }
     }
 
-    // Putting BattleShip into the user's GameBoard
+    /** This function places a battleship on the game board. */
     public static void putInBoard(String[][] board,int rowBattleship,int colBattleship,int orientation, int currentSizeBattleship){
         int HORIZONTAL = 0;
         if(orientation == HORIZONTAL){
@@ -278,7 +333,7 @@ public class Main {
 
 
 
-    //This function receives coordinates and checks if they are in the boundary of the board
+    /** This function receives coordinates and checks if they are in the boundary of the board. */
     public static boolean checkStartingTile(int row, int col, int rowBattleship, int colBattleship) {
         if (rowBattleship < 0 || rowBattleship >= row || colBattleship < 0 || colBattleship >= col)
             return false;
@@ -286,17 +341,17 @@ public class Main {
     }
 
 
-    //this function update a given board according to the coordinate and the sign
+    /** This function updates a given board according to the coordinate and the sign. */
     public static void updateBoard(String[][] board, int row, int col, String sign){
         board[row][col] = sign;
     }
 
-    //checks if the coordinates already been attacked in the past
+    /** This function checks if the coordinates have already been attacked in the past. */
     public static boolean isAlreadyBeenAttacked(String[][] board, int row, int col){
         return board[row][col] != "-";
     }
 
-    //check if the attack missed a battleship
+    /** Checks if the attack missed a battleship. */
     public static boolean isAttackMissed(String[][] board, int row, int col){
         return board[row][col] == "-";
     }
